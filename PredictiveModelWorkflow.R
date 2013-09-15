@@ -71,7 +71,7 @@ setMethod(
   f= "plot", # check args(plot) 
   signature= "PredictiveModel",
   definition=function (x,y,...){
-    matplot(x@myPreProcSettings$CVFolds,t(x@myPreProcSettings$CVRepeats),xaxt="n",type="l",ylab= "",xlab="", pch=1)
+    matplot(x@myPreProcSettings$CVFolds,t(x@mySettings$preprocessing$CVRepeats),xaxt="n",type="l",ylab= "",xlab="", pch=1)
     #axis(1,at=x@times)
   }
 )

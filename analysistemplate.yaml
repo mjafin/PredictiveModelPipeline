@@ -10,7 +10,7 @@ directory:
   output: ./
 
 # required libraries
-libraries: [sda, survival, Hmisc, mixOmics] # further required libraries can be added here
+libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu] # further required libraries can be added here
 
 preprocessing:
   crossvalidation:
