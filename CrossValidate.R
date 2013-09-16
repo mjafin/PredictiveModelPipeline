@@ -15,15 +15,20 @@ CrossValidate = function(Xtrain, y, CVRepeats=10, CVFolds=5, myRandomSeed=1234){
       CVy.train = y[trainInds,,drop=F]
       CVX.test = Xtrain[testInds,,drop=F]
       CVy.test = y[testInds,,drop=F]
-      # pre-process X
+      ## pre-process X
       normTemp = quantilenorm(CVX.train,method="quant", quantprob=0.75)
       CVX.train.norm = normTemp$xout
       CVX.test.norm = quantilenorm(CVX.test,refquant=normTemp$quantiles)$xout
       rm(CVX.train,CVX.test)
-      # filter X
-      # train and predict
+      ## filter X
+      # train, predict, collect results
+      ##SDA
       sda.fit = sda(CVX.train.norm, CVy.train)
       PredTable[testInds,iii] = predict(sda.fit, CVX.test.norm)$posterior[,2,drop=F]
+      ##PoiClaClu
+      #temp = Classify(x=CVX.train,y=CVy.train,
+      #                                   xte=CVX.test,rhos=c(0,5,10))
+      #PredTable[testInds,iii] = temp[[2]]$ytehat
       # collect results
     } # end folds
   } # end repeats

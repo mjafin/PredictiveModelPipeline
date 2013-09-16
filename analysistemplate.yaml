@@ -19,30 +19,20 @@ preprocessing:
     CVRepeats: 10
   inferencetype: Classification # {Classification, Regression, Timetoevent}
   preprocsteps: # arbitrary number of preprocessing steps can be placed here
-    #- stepname: 'Background correction'
+    #- stepname: "Background correction"
     #  method: RMA
     - stepname: "Normalisation"
       method: Quantile
       value: 0.75 # numeric quantile or string 'mean' or 'median' 
     #- stepname: "Summarisation"
-    #  method: sum #  supported: {sum, median}
-  data:
-    # training data matrix or file
-    train: Xx # name of workspace variable or file
-    trainvartype: matrix # {matrix, file}
-    # end point workspace vector or file
-    endpointvec: Yy
-    endpointvartype: vector # {vector, file}
-    # event workspace vector or filename for time-to-event (if applicable)
-    eventvec: NULL
-    eventvartype: vector # {vector, file}
+    #  method: sum #  supported: [sum, median]
 
 inference:
   filtering:
     FilterType: Var
     FractionRemove: 0.5
   featureselection:
-    FeatureSelType: BackwardsElimination # {BackwardsElimination, ForwardSelection}
+    FeatureSelType: BackwardsElimination # [Internal, BackwardsElimination, ForwardSelection]
     FractionRemove: 0.5
     VariablesMin: 2 # For BackwardsElimination
     VariablesMax: NULL # For ForwardSelection

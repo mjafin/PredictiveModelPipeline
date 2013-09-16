@@ -1,4 +1,6 @@
-require("yaml")
+if(!require("yaml")){
+  stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
+}
 # 
 # slotNames(new(Class="PredictiveModel"))
 # getSlots("PredictiveModel")
@@ -11,10 +13,16 @@ require("yaml")
 setClass(
   Class = "PredictiveModel",
   representation=representation( # required information
-    mySettings = "list"
+    mySettings = "list",
+    PreProcDone = "logical",
+    MLDone = "logical",
+    ModelFinalised = "logical"
   ),
   prototype=prototype( # default values
-    mySettings = list()
+    mySettings = list(),
+    PreProcDone = F,
+    MLDone = F,
+    ModelFinalised = F
   ),
   validity=function(object){ # input validator at time of object creation
     # do some input checking
@@ -47,7 +55,7 @@ predictiveModel <- function(yamlfile){
 
 ## Getters:
 #setGeneric("getTimes",function(object){standardGeneric ("getTimes")})
-#setMethod("getTimes","Trajectories",
+#setMethod("getTimes","PredictiveModel",
 #          function(object){
 #            return(object@times)
 #          }
@@ -57,7 +65,7 @@ predictiveModel <- function(yamlfile){
 #setGeneric("setTimes<-",function(object,value){standardGeneric("setTimes<-")})
 #setReplaceMethod(
 #  f="setTimes",
-#  signature="Trajectories",
+#  signature="PredictiveModel",
 #  definition=function(object,value){
 #    object@times <- value
 #    validObject(object) # check validity of input!!
@@ -98,8 +106,12 @@ setMethod("show","PredictiveModel",
 
 ## Internal functions 
 setGeneric (
+  name= "ReloadSettings",
+  def=function(object, yamlfile){standardGeneric("ReloadSettings")}
+)
+setGeneric (
   name= "PreProcessing",
-  def=function(object){standardGeneric("PreProcessing")}
+  def=function(object, Xtrain, ytrain){standardGeneric("PreProcessing")}
 )
 setGeneric (
   name= "MachineLearning",
@@ -116,24 +128,32 @@ setGeneric (
 
 ## Internal function definitions (to be moved to separate files)
 setMethod(
+  f= "ReloadSettings",
+  signature= "PredictiveModel",
+  definition=function(object, yamlfile){
+    mySettings=yaml.load_file(yamlfile)
+    object@mySettings = mySettings
+  }
+)
+setMethod(
   f= "PreProcessing",
   signature= "PredictiveModel",
-  definition=function(object){
-    return(NULL)
+  definition=function(object, Xtrain, ytrain){
+    object@PreProcDone = T
   }
 )
 setMethod(
   f= "MachineLearning",
   signature= "PredictiveModel",
   definition=function(object){
-    return(NULL)
+    object@MLDone = T
   }
 )
 setMethod(
   f= "ModelFinalisation",
   signature= "PredictiveModel",
   definition=function(object){
-    return(NULL)
+    object@ModelFinalised = T
   }
 )
 setMethod(
