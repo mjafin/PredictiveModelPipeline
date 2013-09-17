@@ -2,7 +2,7 @@
 # Example file for specifying run information to PredictiveModelling
 
 # Project generic settings
-projectname: PredictiveSignature01 # descriptive unique name (will end up being part of filenames so be careful)
+projectname: PredSign01 # descriptive unique name (will end up being part of filenames so be careful)
 # Directories
 directory:
   input: ./
@@ -15,8 +15,9 @@ libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu] # further required librar
 preprocessing:
   crossvalidation:
     CVEnable: TRUE # boolean TRUE or FALSE
-    CVFolds: 5
-    CVRepeats: 10
+    CVFolds: 16
+    CVRepeats: 1
+    randomSeed: 1234
   inferencetype: Classification # {Classification, Regression, Timetoevent}
   preprocsteps: # arbitrary number of preprocessing steps can be placed here
     #- stepname: "Background correction"

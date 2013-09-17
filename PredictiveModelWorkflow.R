@@ -16,13 +16,15 @@ setClass(
     mySettings = "list",
     PreProcDone = "logical",
     MLDone = "logical",
-    ModelFinalised = "logical"
+    ModelFinalised = "logical",
+    Internal = "list"
   ),
   prototype=prototype( # default values
     mySettings = list(),
     PreProcDone = F,
     MLDone = F,
-    ModelFinalised = F
+    ModelFinalised = F,
+    Internal = list()
   ),
   validity=function(object){ # input validator at time of object creation
     # do some input checking
@@ -139,6 +141,47 @@ setMethod(
   f= "PreProcessing",
   signature= "PredictiveModel",
   definition=function(object, Xtrain, ytrain){
+    if(object@PreProcDone){
+      cat("PreProcessing function already run for this object. \n")
+      return
+    }
+    # CHANGE this
+    source("quantilenorm.R")
+    sett = object@mySettings$preprocessing
+    if(sett$crossvalidation$CVEnable && !require("cvTools")){
+      stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
+    }
+    N = dim(Xtrain)[1]
+    y=as.matrix(ytrain,N,1)
+    timeString = format(Sys.time(), "%Y%m%d%H%M")
+    object@Internal$preprocessing$fulltraindatafile = sprintf("fullData_%s_%s.RData",object@mySettings$projectname,timeString)
+    if (sett$crossvalidation$CVEnable){
+      object@Internal$preprocessing$cvfoldfilenames = data.frame(matrix(NA, nrow = sett$crossvalidation$CVRepeats, ncol = sett$crossvalidation$CVFolds))
+      set.seed(sett$crossvalidation$randomSeed)
+      # CHANGE drawing of folds to be more intelligent
+      cvfolds = cvFolds(n=N, K = sett$crossvalidation$CVFolds, R = sett$crossvalidation$CVRepeats)
+      object@Internal$preprocessing$cvfolds = cvfolds # store for later use
+      for (iii in 1:cvfolds$R){ # repeats
+        for(jjj in 1:cvfolds$K){ # folds
+          trainInds = cvfolds$subsets[cvfolds$which!=jjj,iii]
+          testInds = cvfolds$subsets[cvfolds$which==jjj,iii]
+          CVX.train = Xtrain[trainInds,,drop=F]
+          CVy.train = y[trainInds,,drop=F]
+          CVX.test = Xtrain[testInds,,drop=F]
+          CVy.test = y[testInds,,drop=F]
+          ## pre-process X
+          ## CHANGE to allow other normalisation
+          normTemp = quantilenorm(CVX.train,method="quant", quantprob=0.75)
+          CVX.train.norm = normTemp$xout
+          CVX.test.norm = quantilenorm(CVX.test,refquant=normTemp$quantiles)$xout
+          object@Internal$preprocessing$cvfoldfilenames[iii,jjj] = sprintf("CVRepeat%dFold%d_%s_%s.Rdata",iii,jjj,object@mySettings$projectname,timeString)
+          save(CVX.train.norm, CVX.test.norm, CVy.train, CVy.test, trainInds, testInds, file = object@Internal$preprocessing$cvfoldfilenames[iii,jjj])
+        }
+      }
+    }
+    #pre process full data and store
+    Xtrain.norm = quantilenorm(Xtrain,method="quant", quantprob=0.75)$xout
+    save(Xtrain.norm, y, file = object@Internal$preprocessing$fulltraindatafile)
     object@PreProcDone = T
   }
 )
