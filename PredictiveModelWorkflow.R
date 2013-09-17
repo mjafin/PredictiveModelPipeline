@@ -154,7 +154,7 @@ setMethod(
     N = dim(Xtrain)[1]
     y=as.matrix(ytrain,N,1)
     timeString = format(Sys.time(), "%Y%m%d%H%M")
-    object@Internal$preprocessing$fulltraindatafile = sprintf("fullData_%s_%s.RData",object@mySettings$projectname,timeString)
+    object@Internal$preprocessing$fulltraindatafile = sprintf("%s_FullData_%s.RData",object@mySettings$projectname,timeString)
     if (sett$crossvalidation$CVEnable){
       object@Internal$preprocessing$cvfoldfilenames = data.frame(matrix(NA, nrow = sett$crossvalidation$CVRepeats, ncol = sett$crossvalidation$CVFolds))
       set.seed(sett$crossvalidation$randomSeed)
@@ -174,7 +174,7 @@ setMethod(
           normTemp = quantilenorm(CVX.train,method="quant", quantprob=0.75)
           CVX.train.norm = normTemp$xout
           CVX.test.norm = quantilenorm(CVX.test,refquant=normTemp$quantiles)$xout
-          object@Internal$preprocessing$cvfoldfilenames[iii,jjj] = sprintf("CVRepeat%dFold%d_%s_%s.Rdata",iii,jjj,object@mySettings$projectname,timeString)
+          object@Internal$preprocessing$cvfoldfilenames[iii,jjj] = sprintf("%s_CVRepeat%dFold%d_%s.Rdata",object@mySettings$projectname,iii,jjj,timeString)
           save(CVX.train.norm, CVX.test.norm, CVy.train, CVy.test, trainInds, testInds, file = object@Internal$preprocessing$cvfoldfilenames[iii,jjj])
         }
       }
@@ -183,6 +183,7 @@ setMethod(
     Xtrain.norm = quantilenorm(Xtrain,method="quant", quantprob=0.75)$xout
     save(Xtrain.norm, y, file = object@Internal$preprocessing$fulltraindatafile)
     object@PreProcDone = T
+    return(object)
   }
 )
 setMethod(
