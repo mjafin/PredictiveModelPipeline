@@ -15,8 +15,9 @@ libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu] # further required librar
 preprocessing:
   crossvalidation:
     CVEnable: TRUE # boolean TRUE or FALSE
-    CVFolds: 16
-    CVRepeats: 1
+    LOOCV: TRUE # If LOOCV is true, CVFolds and CVRepeats are ignored
+    CVFolds: 10
+    CVRepeats: 10
     randomSeed: 1234
   inferencetype: Classification # {Classification, Regression, Timetoevent}
   preprocsteps: # arbitrary number of preprocessing steps can be placed here
@@ -33,14 +34,13 @@ inference:
     FilterType: Var
     FractionRemove: 0.5
   featureselection:
-    FeatureSelType: BackwardsElimination # [Internal, BackwardsElimination, ForwardSelection]
+    FeatureSelType: BackwardsElimination # [Internal, BackwardsElimination]
     FractionRemove: 0.5
     VariablesMin: 2 # For BackwardsElimination
-    VariablesMax: NULL # For ForwardSelection
   machinelearning:
     Algorithm: SDA
     Settings: ['diagonal=false']
 
 finalisation:
-  NumFeatToUse: 10 # number of top ranking features to use
+  NumFeatToUse: 10 # number of top ranking features to use. Modify depending on CV results and reload settings using class method reloadSettings()
  
