@@ -28,6 +28,10 @@ setClass(
   ),
   validity=function(object){ # input validator at time of object creation
     # do some input checking
+    if(somethingWrong){
+      stop("Something wrong with input settings.")
+    }
+    return(TRUE)
   }
 )
 ## Constructor for the user to call (instead of new())
@@ -35,7 +39,9 @@ predictiveModel <- function(yamlfile){
   cat ("~~~~~ PredictiveModel: constructor ~~~~~ \n")
   mySettings=yaml.load_file(yamlfile)
   lapply(mySettings$libraries,require,character.only = T) # load libraries
-  new (Class="PredictiveModel", mySettings=mySettings)
+  myObject = new (Class="PredictiveModel", mySettings=mySettings) # generate an instance
+  validObject(myObject) # validate
+  return(myObject)
 }
 
 ## Internal constructor
