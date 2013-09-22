@@ -1,3 +1,48 @@
+## a simple editor for matrix objects.  Method  $edit() changes some
+## range of values; method $undo() undoes the last edit.
+# 
+# $usingMethods()?
+if(!require("yaml")){
+  stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
+}
+
+# function that returns an object of class myMachineLearningClass
+PredictiveModel = function(inputYamlFile){
+  cat ("~~~~~ PredictiveModel: constructor ~~~~~ \n")
+  mySettings=yaml.load_file(inputYamlFile)
+  #lapply(mySettings$libraries,require,character.only = T) # load libraries
+  Internal=list()
+  Internal$AnalysisSteps=list(PreProcDone=F,MLDone=F,ModelFinalised=F)
+  return(myMachineLearningClass$new(mySettings=mySettings,Internal=Internal))
+  #return(myMachineLearningClass$new(yamlFile=inputYamlFile))
+}
+
+myMachineLearningClass <- setRefClass("PredictiveModel",
+  fields = list( Internal = "list", mySettings = "list"),
+  methods = list(
+    reloadSettings = function(inputYamlFile) {
+      ## the following string documents the edit method
+      'Reload settings from a file.
+       '
+      mySettings <<- yaml.load_file(inputYamlFile)
+      invisible(1) # return 1 for success
+    },
+    myFunc = function() {
+      '.
+       '
+      invisible(1)
+    },
+    show = function() {
+      'Method for automatically printing contents of class instances'
+      cat("Reference object of class",
+          classLabel(class(.self)), "\n")
+      cat("Current settings: \n")
+      methods::show(mySettings) # no recursion here... but show() function on mySettings
+    }
+  ))
+
+
+'
 if(!require("yaml")){
   stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
 }
@@ -213,3 +258,4 @@ setMethod(
     return(NULL)
   }
 )
+'
