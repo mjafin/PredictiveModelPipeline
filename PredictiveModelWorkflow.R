@@ -2,6 +2,10 @@
 ## range of values; method $undo() undoes the last edit.
 # 
 # $usingMethods()?
+
+##temporary sourcing:
+source("CVSetup.R")
+
 if(!require("yaml")){
   stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
 }
@@ -49,7 +53,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
           if(tolower(mySettings$preprocessing$inferencetype) != "classification"){
             stop("ytrain may only be a factor in case of classification analysis.")
           }
-          Internal$SampleInfo$FactorLevels = levels(ytrain)
+          Internal$SampleInfo$FactorLevels <<- levels(ytrain)
           ytrain = matrix((1:length(ytrain))[ytrain],length(ytrain),1)
         }
         else if(is.vector(ytrain)){
@@ -61,7 +65,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       }
       Internal$SampleInfo$EndPointTrain <<- ytrain
       if(Internal$SampleInfo$N != dim(ytrain)[1]){
-        stop("Number of (row) values in ytrain does not agree with number of rows in Xtrain")
+        stop("Number of (row) values in ytrain does not agree with number of rows (samples) in Xtrain")
       }
       Internal$PrepareDataInfo <<- CVSetup(Internal,mySettings,Xtrain,ytrain)
       Internal$AnalysisSteps$PreProcDone <<- T

@@ -1,0 +1,77 @@
+source("quantilenorm.R")
+CVSetup = function(Internal,mySettings,Xtrain,ytrain){
+  'Do some setup and return PrepareDataInfo
+  '
+  PrepareDataInfo = list()
+  sett = mySettings$preprocessing
+  timeString = format(Sys.time(), "%Y%m%d%H%M")
+  N = dim(Xtrain)[1] # number of samples
+  print(N)
+  #pre process full data and store
+  normaliseout = normalise(Xtrain=Xtrain,settings=sett)
+  Xtrain.norm = normaliseout$xouttrain
+  PrepareDataInfo$NormalisationModel = normaliseout$quantiles
+  rm(normaliseout)
+  PrepareDataInfo$fulltraindatafilename = sprintf("%s_FullData_%s.RData", mySettings$projectname,timeString)
+  save(Xtrain.norm, ytrain, file = PrepareDataInfo$fulltraindatafilename)
+  # CV enabled?
+  if(sett$crossvalidation$CVEnable){
+    if(!require("cvTools")){
+      stop("Package cvTools is a requirement to run this pipeline. Please install yaml.")
+    }
+    if(sett$crossvalidation$LOOCV){
+      CVRepeats=1
+      CVFolds=N
+    }
+    else{ # not LOOCV
+      CVRepeats=sett$crossvalidation$CVRepeats
+      CVFolds=sett$crossvalidation$CVFolds
+    }
+    # CHANGE drawing of folds into stratified:
+    set.seed(sett$crossvalidation$randomSeed)
+    cvfolds = cvFolds(n=N, K = CVFolds, R = CVRepeats)
+    print(cvfolds)
+    PrepareDataInfo$cvfoldfilenames = data.frame(matrix(NA, nrow = CVRepeats, ncol = CVFolds))
+    PrepareDataInfo$cvInfo = cvfolds # store for later use
+    
+    # loop through repeats and folds
+    for (iii in 1:cvfolds$R){ # repeats
+      for(jjj in 1:cvfolds$K){ # folds
+        trainInds = cvfolds$subsets[cvfolds$which!=jjj,iii]
+        testInds = cvfolds$subsets[cvfolds$which==jjj,iii]
+        CVX.train = Xtrain[trainInds,,drop=F]
+        CVy.train = ytrain[trainInds,,drop=F]
+        CVX.test = Xtrain[testInds,,drop=F]
+        CVy.test = ytrain[testInds,,drop=F]
+        ## pre-process X
+        ## CHANGE to allow other normalisation
+        normTemp = normalise(CVX.train,settings=sett,Xtest=CVX.test)
+        CVX.train.norm = normTemp$xouttrain
+        CVX.test.norm = normTemp$xouttest
+        PrepareDataInfo$cvfoldfilenames[iii,jjj] = sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString)
+        save(CVX.train.norm, CVX.test.norm, CVy.train, CVy.test, trainInds, testInds, file = PrepareDataInfo$cvfoldfilenames[iii,jjj])
+      }
+    } 
+  }
+  return(PrepareDataInfo)
+}
+    
+normalise=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
+  output=list()
+  if(!is.null(Model)){
+    quantiles=Model$quantiles
+    if(!is.null(Xtrain)){
+      temp=quantilenorm(Xtrain,method="quant", refquant=quantiles)
+      output$xouttrain=temp$xout
+    }
+  }else{
+    temp=quantilenorm(Xtrain,method="quant", quantprob=0.75)
+    quantiles=temp$quantiles
+  }
+  if(!is.null(Xtest)){
+    temp2=quantilenorm(Xtest,method="quant", refquant=temp$quantiles)
+    output$xouttest=temp2$xout
+  }
+  output$quantiles = quantiles
+  return(output)
+}

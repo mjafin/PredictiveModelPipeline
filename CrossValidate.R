@@ -1,5 +1,4 @@
 require("cvTools")
-source("quantilenorm.R")
 CrossValidate = function(Xtrain, y, CVRepeats=10, CVFolds=5, myRandomSeed=1234){
   N = dim(Xtrain)[1]
   y=as.matrix(y,N,1)
