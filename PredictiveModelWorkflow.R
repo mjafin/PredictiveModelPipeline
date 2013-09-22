@@ -5,6 +5,7 @@
 
 ##temporary sourcing:
 source("CVSetup.R")
+source("MLRun.R")
 
 if(!require("yaml")){
   stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
@@ -50,7 +51,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       }
       if(!is.matrix(ytrain)){
         if(is.factor(ytrain)){
-          if(tolower(mySettings$preprocessing$inferencetype) != "classification"){
+          if(tolower(mySettings$preProcessing$inferenceType) != "classification"){
             stop("ytrain may only be a factor in case of classification analysis.")
           }
           Internal$SampleInfo$FactorLevels <<- levels(ytrain)
@@ -67,9 +68,10 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       if(Internal$SampleInfo$N != dim(ytrain)[1]){
         stop("Number of (row) values in ytrain does not agree with number of rows (samples) in Xtrain")
       }
+      # run CV setup
       Internal$PrepareDataInfo <<- CVSetup(Internal,mySettings,Xtrain,ytrain)
       Internal$AnalysisSteps$PreProcDone <<- T
-      cat("PrepareData() finished successfully.")
+      cat("PrepareData() finished successfully. Next run member function MachineLearning().")
       invisible(1)
     },
     MachineLearning = function() {
@@ -84,9 +86,10 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       if(!Internal$AnalysisSteps$PreProcDone){
         stop("Please run the PrepareData() function for the object first, even if CV is disabled.")
       }
-      
+      # run actual CV machine learning (or just ranking on full data if CV disabled)
+      Internal$MachineLearningInfo <<- MLRun(Internal,mySettings)
       Internal$AnalysisSteps$MLDone<<-T
-      cat("MachineLearning() finished successfully.")
+      cat("MachineLearning() finished successfully. Next run member function FinalModelBuild().")
       invisible(1)
     },
     FinalModelBuild = function() {
@@ -103,7 +106,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       }
       
       Internal$AnalysisSteps$ModelFinalised<<-T
-      cat("FinalModelBuild() finished successfully.")
+      cat("FinalModelBuild() finished successfully. Next run member function Predict() on external samples.")
       invisible(1)
     },
     Predict = function() {

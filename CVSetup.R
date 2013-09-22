@@ -3,7 +3,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   'Do some setup and return PrepareDataInfo
   '
   PrepareDataInfo = list()
-  sett = mySettings$preprocessing
+  sett = mySettings$preProcessing
   timeString = format(Sys.time(), "%Y%m%d%H%M")
   N = dim(Xtrain)[1] # number of samples
   print(N)
@@ -13,22 +13,22 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   PrepareDataInfo$NormalisationModel = normaliseout$quantiles
   rm(normaliseout)
   PrepareDataInfo$fulltraindatafilename = sprintf("%s_FullData_%s.RData", mySettings$projectname,timeString)
-  save(Xtrain.norm, ytrain, file = PrepareDataInfo$fulltraindatafilename)
+  save(list(Xtrain.norm=Xtrain.norm, ytrain=ytrain), file = PrepareDataInfo$fulltraindatafilename)
   # CV enabled?
-  if(sett$crossvalidation$CVEnable){
+  if(sett$crossValidation$CVEnable){
     if(!require("cvTools")){
       stop("Package cvTools is a requirement to run this pipeline. Please install yaml.")
     }
-    if(sett$crossvalidation$LOOCV){
+    if(sett$crossValidation$LOOCV){
       CVRepeats=1
       CVFolds=N
     }
     else{ # not LOOCV
-      CVRepeats=sett$crossvalidation$CVRepeats
-      CVFolds=sett$crossvalidation$CVFolds
+      CVRepeats=sett$crossValidation$CVRepeats
+      CVFolds=sett$crossValidation$CVFolds
     }
     # CHANGE drawing of folds into stratified:
-    set.seed(sett$crossvalidation$randomSeed)
+    set.seed(sett$crossValidation$randomSeed)
     cvfolds = cvFolds(n=N, K = CVFolds, R = CVRepeats)
     print(cvfolds)
     PrepareDataInfo$cvfoldfilenames = data.frame(matrix(NA, nrow = CVRepeats, ncol = CVFolds))
@@ -49,7 +49,13 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
         CVX.train.norm = normTemp$xouttrain
         CVX.test.norm = normTemp$xouttest
         PrepareDataInfo$cvfoldfilenames[iii,jjj] = sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString)
-        save(CVX.train.norm, CVX.test.norm, CVy.train, CVy.test, trainInds, testInds, file = PrepareDataInfo$cvfoldfilenames[iii,jjj])
+        save(list(CVX.train.norm=CVX.train.norm, 
+                  CVX.test.norm=CVX.test.norm, 
+                  CVy.train=CVy.train, 
+                  CVy.test=CVy.test, 
+                  trainInds=trainInds, 
+                  testInds=testInds), 
+             file = PrepareDataInfo$cvfoldfilenames[iii,jjj])
       }
     } 
   }

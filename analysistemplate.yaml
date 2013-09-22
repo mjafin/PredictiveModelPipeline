@@ -12,34 +12,34 @@ directory:
 # required libraries
 libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu] # further required libraries can be added here
 
-preprocessing:
+preProcessing:
   crossvalidation:
     CVEnable: TRUE # boolean TRUE or FALSE
     LOOCV: TRUE # If LOOCV is true, CVFolds and CVRepeats are ignored
     CVFolds: 10
     CVRepeats: 10
     randomSeed: 1234
-  inferencetype: Classification # {Classification, Regression, Timetoevent}
-  preprocsteps: # arbitrary number of preprocessing steps can be placed here
-    #- stepname: "Background correction"
+  inferenceType: Classification # {Classification, Regression, Timetoevent}
+  preProcSteps: # arbitrary number of preprocessing steps can be placed here
+    #- stepName: "Background correction"
     #  method: RMA
-    - stepname: "Normalisation"
+    - stepName: "Normalisation"
       method: Quantile
       value: 0.75 # numeric quantile or string 'mean' or 'median' 
-    #- stepname: "Summarisation"
+    #- stepName: "Summarisation"
     #  method: sum #  supported: [sum, median]
 
 inference:
   filtering:
-    FilterType: Var
-    FractionRemove: 0.5
-  featureselection:
-    FeatureSelType: BackwardsElimination # [Internal, BackwardsElimination]
-    FractionRemove: 0.5
-    VariablesMin: 2 # For BackwardsElimination
-  machinelearning:
-    Algorithm: SDA
-    Settings: ['diagonal=false']
+    filterType: Var
+    fractionToRemove: 0.5
+  featureSelection:
+    featureSelType: BackwardsElimination # [Internal, BackwardsElimination]
+    fractionToRemove: 0.5
+    variablesMin: 2 # For BackwardsElimination
+  machineLearning:
+    algorithm: SDA
+    settings: ['diagonal=false']
 
 finalisation:
   NumFeatToUse: 10 # number of top ranking features to use. Modify depending on CV results and reload settings using class method reloadSettings()
