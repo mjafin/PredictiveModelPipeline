@@ -6,7 +6,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   sett = mySettings$preProcessing
   timeString = format(Sys.time(), "%Y%m%d%H%M")
   N = dim(Xtrain)[1] # number of samples
-  print(N)
+  #print(N)
   #pre process full data and store
   normaliseout = normalise(Xtrain=Xtrain,settings=sett)
   Xtrain.norm = normaliseout$xouttrain
