@@ -9,17 +9,19 @@ MLRun = function(Internal,mySettings){
   if(MachineLearningInfo$FeatSelType=="backwardselimination")
     BESteps = CalcBESteps(P,mySettings$inference$featureSelection$variablesMin,mySettings$inference$featureSelection$fractionToRemove)
   else BESteps = NULL
-  MachineLearningInfo$FullDataModels=TrainModels(fulldata$Xtrain.norm,fulldata$ytrain,mySettings,BESteps=BESteps)$models
-  rm(fulldata)
+  fulldatamodel = TrainModels(fulldata$Xtrain.norm,fulldata$ytrain,mySettings,BESteps=BESteps)
+  MachineLearningInfo$FullData$Model=fulldatamodel$model
+  MachineLearningInfo$FullData$Ranking=fulldatamodel$ranking
+  rm(fulldata,fulldatamodel)
   # do CV rounds, if enabled
   if(mySettings$preprocessing$crossvalidation$CVEnable){
     cvfolds = Internal$PrepareDataInfo$cvInfo
     if(MachineLearningInfo$FeatSelType=="internal"){
       PredTable = matrix(NA, N, cvfolds$R)
-      PredClassLabelTable = matrix(NA, N, cvfolds$R)
+      PredClassLabelTable = PredTable
     }else if(MachineLearningInfo$FeatSelType=="backwardselimination"){
       PredTable = array(NA, dim=c(N, cvfolds$R,length(BESteps)))
-      PredClassLabelTable = array(NA, dim=c(N, cvfolds$R,length(BESteps)))
+      PredClassLabelTable = PredTable
     }else
       stop("Unsupported feature selection type: ",MachineLearningInfo$FeatSelType)
     for (iii in 1:cvfolds$R){ # repeats
@@ -29,27 +31,62 @@ MLRun = function(Internal,mySettings){
         cvdata = load(nternal$PrepareDataInfo$cvfoldfilenames[iii,jjj])
         # train, predict, collect results
         CVResults = TrainModels(cvdata$CVX.train,cvdata$CVy.train,mySettings,Xtest=cvdata$CVX.test,BESteps=BESteps)
-        PredTable[cvdata$testInds,iii] = CVResults$continuousPreds
-        PredClassLabelTable[cvdata$testInds,iii] = CVResults$labelPreds
+        if(MachineLearningInfo$FeatSelType=="internal"){
+          PredTable[cvdata$testInds,iii] = CVResults$continuousPreds # vector-matrix
+          PredClassLabelTable[cvdata$testInds,iii] = CVResults$labelPreds # vector-matrix
+        }else if(MachineLearningInfo$FeatSelType=="backwardselimination"){
+          PredTable[cvdata$testInds,iii,] = CVResults$continuousPreds # matrix
+          PredClassLabelTable[cvdata$testInds,iii,] = CVResults$labelPreds # matrix
+        }else 
+          stop("Unsupported feature selection type: ",MachineLearningInfo$FeatSelType)
       } # end folds
     } # end repeats
-    MachineLearningInfo$PredTable=PredTable
-    MachineLearningInfo$PredClassLabelTable=PredClassLabelTable
+    MachineLearningInfo$CV$PredTable=PredTable
+    MachineLearningInfo$CV$PredClassLabelTable=PredClassLabelTable
   }
   return(MachineLearningInfo)
 }
 
 TrainModels=function(CVX.train,CVy.train,mySettings,Xtest=NULL,BESteps=NULL){
-  #fields: models, continuousPreds, labelPreds, ranking
+  #fields: model, continuousPreds, labelPreds, ranking
   FeatSelType = tolower(mySettings$inference$featureSelection$FeatureSelType)
   PredModFunc = get( cat("PredictiveModel",toupper(mySettings$inference$machineLearning$algorithm),sep="") )
   if(FeatSelType=="internal"){
     out=PredModFunc(CVX.train,CVy.train,mySettings,Xtest=Xtest,internFeatSel=T)
   }else if(FeatSelType=="backwardselimination"){
-    for (numFeat in BESteps){
-      out=PredModFunc(CVX.train,CVy.train,mySettings,Xtest=Xtest)
-      stop("FIXME")
+    out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, ranking=NULL)
+    N=dim(Xtest)[1]
+    P=dim(Xtest)[2]
+    if(!is.null(Xtest)){
+      PredTable=matrix(NA,N,length(BESteps))
+      PredClassLabelTable=PredTable
     }
+    isInitialised=FALSE
+    for (numFeat in BESteps){
+      if(!isInitialised){
+        # use full data
+        tempout=PredModFunc(CVX.train,CVy.train,mySettings,Xtest=Xtest)
+        ranking=tempout$ranking
+        isInitialised = TRUE
+      }else{
+        idx=matrix(NA,P,1)
+        idx[ranking]=1:P # ranks to idx
+        idx=sort(idx[1:numFeat])# picks numFeat highest ranked features and sorts
+        tempout=PredModFunc(CVX.train[,idx],CVy.train,mySettings,Xtest=Xtest[,idx])
+        ranking[idx]=tempout$ranking # update ranks
+      }
+      if(!is.null(Xtest)){
+        PredTable[,numFeat]=tempout$continuousPreds
+        PredClassLabelTable[,numFeat]=tempout$labelPreds
+      }
+    }
+    if(!is.null(Xtest)){
+      out$continuousPreds = PredTable
+      out$labelPreds = PredClassLabelTable
+    }
+    stop("feature names")
+    out$ranking = ranking
+    # do not return a model as the feature elimination rounds produce multiple
   }else
     stop("Unsupported feature selection type: ",FeatSelType)
   return(out)
@@ -58,11 +95,12 @@ TrainModels=function(CVX.train,CVy.train,mySettings,Xtest=NULL,BESteps=NULL){
 # machine learning implementations
 PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeatSel=F){
   ##SDA
-  out=list(models=NULL, continuousPreds=NULL, labelPreds=NULL, ranking=NULL)
+  out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, ranking=NULL)
   if(internFeatSel){
     sdaranking = sda.ranking(CVX.train, CVy.train, verbose=FALSE)
-    out$ranking = 1:1:dim(CVX.train)[1] # dummy
-    ranking[sdaranking[,"idx"]] = 1:dim(CVX.train)[1] # ranks of features
+    out$ranking = 1:dim(CVX.train)[1] # dummy
+    stop("add column names")
+    out$ranking[sdaranking[,"idx"]] = out$ranking # ranks of features
     NumFeatUse = max(sum(sdaranking[,"lfdr"] < 0.8),1) # use 1 at least
     sda.fit = sda(CVX.train.norm[,sdaranking[1:NumFeatUse,"idx"]], CVy.train, verbose=FALSE)
     if(!is.null(Xtest)){
@@ -73,7 +111,7 @@ PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeat
     }
   }else{ # use all data to train a model and predict
     sda.fit = sda(CVX.train.norm, CVy.train, verbose=FALSE)
-    out$models=sda.fit
+    out$model=sda.fit
     if(!is.null(Xtest)){
       sdapreds = predict(sda.fit, CVX.test.norm)
       out$labelPreds = sdapreds$class
@@ -84,14 +122,17 @@ PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeat
 }
 
 PredictiveModelPOICLACLU=function(CVX.train,CVy.train,mySettings,Xtest=NULL){
+  out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, ranking=NULL)
   ##PoiClaClu
   temp = Classify(x=CVX.train,y=CVy.train,
                   xte=CVX.test,rhos=c(0,5,10))
   temp[[2]]$ytehat
+  return(out)
 }
 
 PredictiveModelSPLSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL){
-  
+  out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, ranking=NULL)
+  return(out)
 }
 
 PredictiveModelPARTIALCOX=function(){
