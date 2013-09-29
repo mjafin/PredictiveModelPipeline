@@ -138,14 +138,24 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       # how many x-axis values:
       if(tolower(Internal$MachineLearningInfo$FeatSelType)=="backwardselimination"){
         xAxis=Internal$MachineLearningInfo$BESteps
-      }else if(tolower(Internal$MachineLearningInfo$FeatSelType)=="internal")
-        xAxis="Internal features"
+        xlab="# selected features"
+        showXaxis="s"
+      }else if(tolower(Internal$MachineLearningInfo$FeatSelType)=="internal"){
+        xAxis=0
+        xlab="Internal feature selection"
+        showXaxis="n"
+      }
+        
       else
         stop("Incorrect feature selection type selected.")
       # plot
       for (measure in Measures){
         stats = fetchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
-        errbar(xAxis, y=stats$average, yminus=stats$lowerInt, yplus=stats$upperInt) # plotrix function
+        errbar(xAxis, y=stats$average, yminus=stats$lowerInt, yplus=stats$upperInt,
+               ylab=measure,
+               xlab=xlab,
+               xaxt=showXaxis) # errbar from Hmisc
+        title("Cross validation performance")
       }
       invisible(1)
     },
