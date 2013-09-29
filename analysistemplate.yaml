@@ -5,9 +5,8 @@
 projectname: PredSign01 # descriptive unique name (will end up being part of filenames so be careful)
 # Directories
 directory:
-  input: ./
   intermediate: ./
-  output: ./
+  #output: ./
 
 # required libraries
 libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu, epibasix] # further required libraries can be added here
@@ -25,7 +24,9 @@ preProcessing:
     #  method: RMA
     - stepName: "Normalisation"
       method: Quantile
-      value: 0.75 # numeric quantile or string 'mean' or 'median' 
+      value: 0.75 # numeric quantile or string 'mean' or 'median'
+    - stepName: "Log transform"
+      method: log2
     #- stepName: "Summarisation"
     #  method: sum #  supported: [sum, median]
 

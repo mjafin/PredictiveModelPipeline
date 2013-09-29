@@ -6,13 +6,27 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   sett = mySettings$preProcessing
   timeString = format(Sys.time(), "%Y%m%d%H%M")
   N = dim(Xtrain)[1] # number of samples
-  #print(N)
+  # check missing values
+  if(any(is.na(Xtrain))){
+    cat("Missing values detected in Xtrain. Imputing by median of values present in the sample(s).")
+    tempf=function(x){
+      if(any(is.na(x)))
+        x[is.na(x)]=median(x, na.rm=TRUE)
+      return(x)
+    }
+    Xtrain=t(apply(Xtrain,1,tempf)) # transpose required because apply sucks
+  }
+  if(any(is.na(ytrain))){
+    stop("ytrain must not have any missing values.")
+  }
+  
   #pre process full data and store
   normaliseout = normalise(settings=sett,Xtrain=Xtrain)
   Xtrain.norm = normaliseout$xouttrain
   PrepareDataInfo$NormalisationModel = normaliseout$quantiles
   rm(normaliseout)
-  PrepareDataInfo$fulltraindatafilename = sprintf("%s_FullData_%s.Rdata", mySettings$projectname,timeString)
+  PrepareDataInfo$fulltraindatafilename = file.path(mySettings$directory$intermediate,
+                                                    sprintf("%s_FullData_%s.Rdata", mySettings$projectname,timeString))
   save(Xtrain.norm, ytrain, file = PrepareDataInfo$fulltraindatafilename)
   # CV enabled?
   if(sett$crossValidation$CVEnable){
@@ -55,7 +69,8 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
         normTemp = normalise(CVX.train,settings=sett,Xtest=CVX.test)
         CVX.train.norm = normTemp$xouttrain
         CVX.test.norm = normTemp$xouttest
-        PrepareDataInfo$cvfoldfilenames[iii,jjj] = sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString)
+        PrepareDataInfo$cvfoldfilenames[iii,jjj] = file.path(mySettings$directory$intermediate,
+                                                             sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString))
         save(CVX.train.norm, 
                   CVX.test.norm, 
                   CVy.train, 
