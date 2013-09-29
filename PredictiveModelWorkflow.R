@@ -6,6 +6,7 @@
 ##temporary sourcing:
 source("CVSetup.R")
 source("MLRun.R")
+source("helperFunctions.R")
 
 if(!require("yaml")){
   stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
@@ -38,35 +39,37 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       if(Internal$AnalysisSteps$PreProcDone){
         cat("PrepareData has already been run for this object. Do you want to rerun (y/n)?")
         yesno=scan(what=character(),n=1)
-        if(length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
-          stop()
+        if(!length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
+          stop("Stopping.")
       }
       Internal$SampleInfo <<- list(VarNames=colnames(Xtrain),
                                    SampleNames=rownames(Xtrain),
-                                   N=dim(X)[1],
-                                   P=dim(X)[2])
+                                   N=dim(Xtrain)[1],
+                                   P=dim(Xtrain)[2])
       ## Perform some sanity checks on input data
       if (is.null(Internal$SampleInfo$VarNames) || is.null(Internal$SampleInfo$VarNames)){
         stop("Input training matrix does not contain sample and/or variable names. Please provide some column and row names")
       }
-      if(!is.matrix(ytrain)){
-        if(is.factor(ytrain)){
-          if(tolower(mySettings$preProcessing$inferenceType) != "classification"){
-            stop("ytrain may only be a factor in case of classification analysis.")
-          }
-          Internal$SampleInfo$FactorLevels <<- levels(ytrain)
-          ytrain = matrix((1:length(ytrain))[ytrain],length(ytrain),1)
-        }
-        else if(is.vector(ytrain)){
-          ytrain = matrix(ytrain,length(ytrain),1)
-        }
-        else{
-          stop("Please provide ytrain as a column matrix, vector or factor")
-        }
-      }
+      if(tolower(mySettings$preProcessing$inferenceType) == "classification"){
+        if(!is.vector(ytrain) && !is.factor(ytrain))
+          stop("In classification analysis, ytrain must be a vector or a factor")
+        if(is.vector(ytrain))
+           ytrain=factor(ytrain)
+      }else if (tolower(mySettings$preProcessing$inferenceType) == "regression"){
+        if(!is.vector(ytrain) && !is.matrix(ytrain))
+          stop("In regression analysis, ytrain must be a vector or a matrix.")
+      }else if (tolower(mySettings$preProcessing$inferenceType) == "timetoevent"){
+        if (!is.matrix(ytrain))
+          stop("In time to event analysis, ytrain must be a matrix with follow up times in the first column and event indicator in the second column.")
+      }else stop("Incorrect inference type selected.")
+      
       Internal$SampleInfo$EndPointTrain <<- ytrain
-      if(Internal$SampleInfo$N != dim(ytrain)[1]){
-        stop("Number of (row) values in ytrain does not agree with number of rows (samples) in Xtrain")
+      if (is.matrix(ytrain)){
+        if(Internal$SampleInfo$N != dim(ytrain)[1])
+          stop("Number of (row) values in ytrain does not agree with number of rows (samples) in Xtrain")
+      }else {
+        if(Internal$SampleInfo$N != length(ytrain))
+          stop("Number of values in ytrain does not agree with number of rows (samples) in Xtrain")
       }
       # run CV setup
       Internal$PrepareDataInfo <<- CVSetup(Internal,mySettings,Xtrain,ytrain)
@@ -80,8 +83,8 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       if(Internal$AnalysisSteps$MLDone){
         cat("MachineLearning has already been run for this object. Do you want to rerun (y/n)?")
         yesno=scan(what=character(),n=1)
-        if(length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
-          stop()
+        if(!length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
+          stop("Stopping.")
       }
       if(!Internal$AnalysisSteps$PreProcDone){
         stop("Please run the PrepareData() function for the object first, even if CV is disabled.")
@@ -98,8 +101,8 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       if(Internal$AnalysisSteps$ModelFinalised){
         cat("FinalModelBuild has already been run for this object. Do you want to rerun (y/n)?")
         yesno=scan(what=character(),n=1)
-        if(length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
-          stop()
+        if(!length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
+          stop("Stopping.")
       }
       if(!Internal$AnalysisSteps$MLDone){
         stop("Please run the MachineLearning() function for the object first, even if CV is disabled.")
@@ -117,14 +120,31 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
     Plot = function() {
       'Plot performance measures for CV results.
        '
+      if(!Internal$AnalysisSteps$MLDone)
+        stop("Please run member function MachineLearning() before attempting to plot the results.")
+      # check analysis type
+      if(tolower(mySettings$preProcessing$inferenceType) == "classification"){
+        if(length(levels(Internal$SampleInfo$EndPointTrain))>2)
+          Measures=c("Accuracy")
+        else
+          Measures=c("Accuracy","AUC","Sensitivity","Specificity")
+      }else if (tolower(mySettings$preProcessing$inferenceType) == "regression"){
+        Measures=c("Concordance")
+      }else if (tolower(mySettings$preProcessing$inferenceType) == "timetoevent"){
+        Measures=c("Concordance","HR")
+      }else stop("Incorrect inference type selected.")
+      for (measure in Measures){
+        stats = fectchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
+        plot(1,1)
+      }
       invisible(1)
     },
     show = function() {
       'Method for automatically printing contents of class instances'
       cat("Reference object of class",
           classLabel(class(.self)), "\n")
-      cat("Current settings: \n")
-      methods::show(mySettings) # no recursion here... but show() function on mySettings
+      #cat("Current settings: \n")
+      #methods::show(mySettings) # no recursion here... but show() function on mySettings
       myMethods = myMachineLearningClass$methods()
       cat("Public methods: ",myMethods[grep("^[A-Z]",myMethods)]) # show methods that start with upper case
     }

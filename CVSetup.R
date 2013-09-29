@@ -8,12 +8,12 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   N = dim(Xtrain)[1] # number of samples
   #print(N)
   #pre process full data and store
-  normaliseout = normalise(Xtrain=Xtrain,settings=sett)
+  normaliseout = normalise(settings=sett,Xtrain=Xtrain)
   Xtrain.norm = normaliseout$xouttrain
   PrepareDataInfo$NormalisationModel = normaliseout$quantiles
   rm(normaliseout)
-  PrepareDataInfo$fulltraindatafilename = sprintf("%s_FullData_%s.RData", mySettings$projectname,timeString)
-  save(list(Xtrain.norm=Xtrain.norm, ytrain=ytrain), file = PrepareDataInfo$fulltraindatafilename)
+  PrepareDataInfo$fulltraindatafilename = sprintf("%s_FullData_%s.Rdata", mySettings$projectname,timeString)
+  save(Xtrain.norm, ytrain, file = PrepareDataInfo$fulltraindatafilename)
   # CV enabled?
   if(sett$crossValidation$CVEnable){
     if(!require("cvTools")){
@@ -40,21 +40,28 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
         trainInds = cvfolds$subsets[cvfolds$which!=jjj,iii]
         testInds = cvfolds$subsets[cvfolds$which==jjj,iii]
         CVX.train = Xtrain[trainInds,,drop=F]
-        CVy.train = ytrain[trainInds,,drop=F]
         CVX.test = Xtrain[testInds,,drop=F]
-        CVy.test = ytrain[testInds,,drop=F]
+        if(is.matrix(ytrain)){
+          CVy.train = ytrain[trainInds,,drop=F]
+          CVy.test = ytrain[testInds,,drop=F]
+        }
+        else{ 
+          CVy.train = ytrain[trainInds]
+          CVy.test = ytrain[testInds]
+        }
+
         ## pre-process X
         ## CHANGE to allow other normalisation
         normTemp = normalise(CVX.train,settings=sett,Xtest=CVX.test)
         CVX.train.norm = normTemp$xouttrain
         CVX.test.norm = normTemp$xouttest
         PrepareDataInfo$cvfoldfilenames[iii,jjj] = sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString)
-        save(list(CVX.train.norm=CVX.train.norm, 
-                  CVX.test.norm=CVX.test.norm, 
-                  CVy.train=CVy.train, 
-                  CVy.test=CVy.test, 
-                  trainInds=trainInds, 
-                  testInds=testInds), 
+        save(CVX.train.norm, 
+                  CVX.test.norm, 
+                  CVy.train, 
+                  CVy.test, 
+                  trainInds, 
+                  testInds, 
              file = PrepareDataInfo$cvfoldfilenames[iii,jjj])
       }
     } 
@@ -73,6 +80,7 @@ normalise=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
   }else{
     temp=quantilenorm(Xtrain,method="quant", quantprob=0.75)
     quantiles=temp$quantiles
+    output$xouttrain=temp$xout
   }
   if(!is.null(Xtest)){
     temp2=quantilenorm(Xtest,method="quant", refquant=temp$quantiles)

@@ -13,7 +13,7 @@ directory:
 libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu] # further required libraries can be added here
 
 preProcessing:
-  crossvalidation:
+  crossValidation:
     CVEnable: TRUE # boolean TRUE or FALSE
     LOOCV: TRUE # If LOOCV is true, CVFolds and CVRepeats are ignored
     CVFolds: 10
@@ -34,7 +34,7 @@ inference:
     filterType: Var
     fractionToRemove: 0.5
   featureSelection:
-    featureSelType: BackwardsElimination # [Internal, BackwardsElimination]
+    featureSelType: Internal # BackwardsElimination # [Internal, BackwardsElimination]
     fractionToRemove: 0.5
     variablesMin: 2 # For BackwardsElimination
   machineLearning:
