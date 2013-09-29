@@ -10,7 +10,7 @@ directory:
   output: ./
 
 # required libraries
-libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu] # further required libraries can be added here
+libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu, epibasix] # further required libraries can be added here
 
 preProcessing:
   crossValidation:
@@ -34,7 +34,7 @@ inference:
     filterType: Var
     fractionToRemove: 0.5
   featureSelection:
-    featureSelType: Internal #BackwardsElimination # [Internal, BackwardsElimination]
+    featureSelType: BackwardsElimination # [Internal, BackwardsElimination]
     fractionToRemove: 0.5
     variablesMin: 2 # For BackwardsElimination
   machineLearning:

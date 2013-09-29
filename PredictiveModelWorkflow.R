@@ -129,7 +129,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         if(length(levels(Internal$SampleInfo$EndPointTrain))>2)
           Measures=c("Accuracy")
         else
-          Measures= c("AUC") #c("Accuracy","AUC","Sensitivity","Specificity")
+          Measures= c("Accuracy","AUC","Sensitivity","Specificity")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "regression"){
         Measures=c("Concordance")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "timetoevent"){
