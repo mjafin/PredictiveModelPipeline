@@ -7,6 +7,8 @@
 source("CVSetup.R")
 source("MLRun.R")
 source("helperFunctions.R")
+#require("plotrix")
+require("Hmisc")
 
 if(!require("yaml")){
   stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
@@ -127,15 +129,23 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         if(length(levels(Internal$SampleInfo$EndPointTrain))>2)
           Measures=c("Accuracy")
         else
-          Measures=c("Accuracy","AUC","Sensitivity","Specificity")
+          Measures= c("AUC") #c("Accuracy","AUC","Sensitivity","Specificity")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "regression"){
         Measures=c("Concordance")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "timetoevent"){
         Measures=c("Concordance","HR")
       }else stop("Incorrect inference type selected.")
+      # how many x-axis values:
+      if(tolower(Internal$MachineLearningInfo$FeatSelType)=="backwardselimination"){
+        xAxis=Internal$MachineLearningInfo$BESteps
+      }else if(tolower(Internal$MachineLearningInfo$FeatSelType)=="internal")
+        xAxis="Internal features"
+      else
+        stop("Incorrect feature selection type selected.")
+      # plot
       for (measure in Measures){
-        stats = fectchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
-        plot(1,1)
+        stats = fetchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
+        errbar(xAxis, y=stats$average, yminus=stats$lowerInt, yplus=stats$upperInt) # plotrix function
       }
       invisible(1)
     },

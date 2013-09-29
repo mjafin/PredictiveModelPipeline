@@ -6,7 +6,7 @@ MLRun = function(Internal,mySettings){
   MachineLearningInfo$FeatSelType = tolower(mySettings$inference$featureSelection$featureSelType)
   P=dim(Xtrain.norm)[2]
   N=dim(Xtrain.norm)[1]
-  if(MachineLearningInfo$FeatSelType=="backwardselimination"){
+  if(tolower(MachineLearningInfo$FeatSelType)=="backwardselimination"){
     BESteps = CalcBESteps(P,mySettings$inference$featureSelection$variablesMin,mySettings$inference$featureSelection$fractionToRemove)
     MachineLearningInfo$BESteps=BESteps
   }
@@ -21,10 +21,10 @@ MLRun = function(Internal,mySettings){
   # do CV rounds, if enabled
   if(mySettings$preProcessing$crossValidation$CVEnable){
     cvfolds = Internal$PrepareDataInfo$cvInfo
-    if(MachineLearningInfo$FeatSelType=="internal"){
+    if(tolower(MachineLearningInfo$FeatSelType)=="internal"){
       PredTable = matrix(NA, N, cvfolds$R)
       PredClassLabelTable = PredTable
-    }else if(MachineLearningInfo$FeatSelType=="backwardselimination"){
+    }else if(tolower(MachineLearningInfo$FeatSelType)=="backwardselimination"){
       PredTable = array(NA, dim=c(N, cvfolds$R,length(BESteps)))
       PredClassLabelTable = PredTable
     }else
@@ -36,10 +36,10 @@ MLRun = function(Internal,mySettings){
         load(Internal$PrepareDataInfo$cvfoldfilenames[iii,jjj])
         # train, predict, collect results
         CVResults = TrainModels(CVX.train.norm,CVy.train,mySettings,Xtest=CVX.test.norm,BESteps=BESteps)
-        if(MachineLearningInfo$FeatSelType=="internal"){
+        if(tolower(MachineLearningInfo$FeatSelType)=="internal"){
           PredTable[testInds,iii] = CVResults$continuousPreds # vector-matrix
           PredClassLabelTable[testInds,iii] = CVResults$labelPreds # vector-matrix
-        }else if(MachineLearningInfo$FeatSelType=="backwardselimination"){
+        }else if(tolower(MachineLearningInfo$FeatSelType)=="backwardselimination"){
           PredTable[testInds,iii,] = CVResults$continuousPreds # matrix
           PredClassLabelTable[testInds,iii,] = CVResults$labelPreds # matrix
         }else 
@@ -56,9 +56,9 @@ TrainModels=function(CVX.train,CVy.train,mySettings,Xtest=NULL,BESteps=NULL){
   #fields: model, continuousPreds, labelPreds, featureRanks
   FeatSelType = tolower(mySettings$inference$featureSelection$featureSelType)
   PredModFunc = get( paste("PredictiveModel",toupper(mySettings$inference$machineLearning$algorithm),sep="") )
-  if(FeatSelType=="internal"){
+  if(tolower(FeatSelType)=="internal"){
     out=PredModFunc(CVX.train,CVy.train,mySettings,Xtest=Xtest,internFeatSel=T)
-  }else if(FeatSelType=="backwardselimination"){
+  }else if(tolower(FeatSelType)=="backwardselimination"){
     out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, featureRanks=NULL)
     N=dim(Xtest)[1]
     P=dim(CVX.train)[2]
@@ -108,6 +108,8 @@ PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeat
     #names(out$featureRanks)=colnames(CVX.train)
     NumFeatUse = max(sum(sdaranking[,"lfdr"] < 0.8),1) # use 1 at least
     sda.fit = sda(CVX.train[,sdaranking[1:NumFeatUse,"idx"],drop=FALSE], CVy.train, verbose=FALSE)
+    out$model=sda.fit
+    out$NumFeatUse=NumFeatUse
     if(!is.null(Xtest)){
       sdapreds = predict(sda.fit, Xtest[,sdaranking[1:NumFeatUse,"idx"],drop=FALSE],verbose=FALSE)
       out$labelPreds = sdapreds$class
