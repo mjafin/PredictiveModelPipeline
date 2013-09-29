@@ -94,7 +94,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       # run actual CV machine learning (or just ranking on full data if CV disabled)
       Internal$MachineLearningInfo <<- MLRun(Internal,mySettings)
       Internal$AnalysisSteps$MLDone<<-T
-      cat("MachineLearning() finished successfully. Next run member function FinalModelBuild().")
+      cat("MachineLearning() finished successfully. Next run member function Plot() followed by FinalModelBuild().")
       invisible(1)
     },
     FinalModelBuild = function() {
@@ -145,17 +145,20 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         xlab="Internal feature selection"
         showXaxis="n"
       }
-        
       else
         stop("Incorrect feature selection type selected.")
+      Internal$PerformanceMeasures <<- list()
+      Internal$PerformanceMeasures$xAxis <<- xAxis
       # plot
       for (measure in Measures){
         stats = fetchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
         errbar(xAxis, y=stats$average, yminus=stats$lowerInt, yplus=stats$upperInt,
                ylab=measure,
                xlab=xlab,
-               xaxt=showXaxis) # errbar from Hmisc
+               xaxt=showXaxis,
+               log="x") # errbar from Hmisc
         title("Cross validation performance")
+        Internal$PerformanceMeasures[[measure]]<<-stats
       }
       invisible(1)
     },
