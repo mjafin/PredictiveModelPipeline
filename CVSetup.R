@@ -21,10 +21,10 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   }
   
   #pre process full data and store
-  normaliseout = normalise(settings=sett,Xtrain=Xtrain)
-  Xtrain.norm = normaliseout$xouttrain
-  PrepareDataInfo$NormalisationModel = normaliseout$quantiles
-  rm(normaliseout)
+  preProcout = preProc(settings=sett,Xtrain=Xtrain)
+  Xtrain.norm = preProcout$xouttrain
+  PrepareDataInfo$PreProcModel = preProcout$Model # data.frame with as many entries as there are steps
+  rm(preProcout)
   PrepareDataInfo$fulltraindatafilename = file.path(mySettings$directory$intermediate,
                                                     sprintf("%s_FullData_%s.Rdata", mySettings$projectname,timeString))
   save(Xtrain.norm, ytrain, file = PrepareDataInfo$fulltraindatafilename)
@@ -65,8 +65,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
         }
 
         ## pre-process X
-        ## CHANGE to allow other normalisation
-        normTemp = normalise(CVX.train,settings=sett,Xtest=CVX.test)
+        normTemp = preProc(CVX.train,settings=sett,Xtest=CVX.test)
         CVX.train.norm = normTemp$xouttrain
         CVX.test.norm = normTemp$xouttest
         PrepareDataInfo$cvfoldfilenames[iii,jjj] = file.path(mySettings$directory$intermediate,
@@ -84,8 +83,42 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   return(PrepareDataInfo)
 }
     
-normalise=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
+preProc=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
   output=list()
+  # if normalisation etc. steps disabled:
+  if(is.null(settings$preProcSteps)||length(settings$preProcSteps)<1){
+    output$xouttrain=Xtrain
+    output$xouttest=Xtest
+    return(output)
+  }
+  NumPreProcSteps=length(settings$preProcSteps)
+  NewModel=data.frame(matrix(nrow=1,ncol=NumPreProcSteps)) # temporary storage for preprocessing models
+  # otherwise, loop through preProcSteps
+  for(ii in 1:NumPreProcSteps){
+    SubModel=Model[[ii]] # extract preprocessing model for this step (possibly NULL)
+    funcHandle=get( paste(tolower(settings$preProcSteps[[ii]]$method),"Func",sep="") )
+    outtemp=funcHandle(settings$preProcSteps[[ii]],Xtrain,Xtest,SubModel)
+    Xtrain=outtemp$xouttrain # update Xtrain
+    Xtest=outtemp$xouttest # update Xtest
+    NewModel[[ii]]=outtemp$Model
+    rm(outtemp)
+  }
+  output=list(xouttrain=Xtrain,xouttest=Xtest,Model=NewModel)
+  return(output)
+}
+
+logFunc=function(stepSettings,Xtrain=NULL,Xtest=NULL,Model=NULL){
+  myBase=stepSettings$value
+  if(!is.null(Xtrain))
+    Xtrain=log(Xtrain,myBase)
+  if(!is.null(Xtest))
+    Xtest=log(Xtest,myBase)
+  output=list(xouttrain=Xtrain,xouttest=Xtest,Model=NA)
+  return(output)
+}
+
+quantileFunc=function(stepSettings,Xtrain=NULL,Xtest=NULL,Model=NULL){
+  output=list(xouttrain=NULL,xouttest=NULL,Model=NULL)
   if(!is.null(Model)){
     quantiles=Model$quantiles
     if(!is.null(Xtrain)){
@@ -93,7 +126,7 @@ normalise=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
       output$xouttrain=temp$xout
     }
   }else{
-    temp=quantilenorm(Xtrain,method="quant", quantprob=0.75)
+    temp=quantilenorm(Xtrain,method="quant", quantprob=stepSettings$value)
     quantiles=temp$quantiles
     output$xouttrain=temp$xout
   }
@@ -101,6 +134,6 @@ normalise=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
     temp2=quantilenorm(Xtest,method="quant", refquant=temp$quantiles)
     output$xouttest=temp2$xout
   }
-  output$quantiles = quantiles
+  output$Model$quantiles = quantiles
   return(output)
 }

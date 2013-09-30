@@ -18,17 +18,14 @@ preProcessing:
     CVFolds: 10
     CVRepeats: 10
     randomSeed: 1234
-  inferenceType: Classification # {Classification, Regression, Timetoevent}
+  inferenceType: Classification # [Classification, Regression, Timetoevent]
   preProcSteps: # arbitrary number of preprocessing steps can be placed here
-    #- stepName: "Background correction"
-    #  method: RMA
-    - stepName: "Normalisation"
-      method: Quantile
-      value: 0.75 # numeric quantile or string 'mean' or 'median'
-    - stepName: "Log transform"
-      method: log2
-    #- stepName: "Summarisation"
-    #  method: sum #  supported: [sum, median]
+    - method: Quantile
+      value: 0.75 # numeric quantile (0.5 corresponds to median)
+    - method: log
+      value: 2 # log 2 transform
+    #- method: summarisation #  supported: [sum, median]
+    #  value: sum
 
 inference:
   filtering:
