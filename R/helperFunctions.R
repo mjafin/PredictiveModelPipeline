@@ -35,10 +35,11 @@ AccuracyFunc=function(preds,EndPointTrain){
   temp=sensSpec(table(preds,EndPointTrain)[2:1,2:1], alpha=0.05, CL=TRUE, digits=3)
   out$average = temp$PA
   out$CI = c(temp$PA.CIL,temp$PA.CIU)
-  }else{
+  }else{ # multiclass, use simple proportions
     temp=table(preds,EndPointTrain)
-    out$average = diag(temp)/sum(temp)
-    out$CI
+    temp2 = binom.test(x=sum(diag(temp)),n=sum(temp))
+    out$average = temp2$estimate
+    out$CI = temp2$conf.int
   }
   return(out)
 }
