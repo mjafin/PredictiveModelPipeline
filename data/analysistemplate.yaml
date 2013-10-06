@@ -6,10 +6,9 @@ projectname: PredSign01 # descriptive unique name (will end up being part of fil
 # Directories
 directory:
   intermediate: ./
-  #output: ./
 
 # required libraries
-libraries: [sda, survival, Hmisc, mixOmics, PoiClaClu, epibasix] # further required libraries can be added here
+libraries: [] # any additional required libraries can be added here to be loaded in
 
 preProcessing:
   crossValidation:

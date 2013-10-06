@@ -1,1 +1,2 @@
 exportPattern("^[[:alpha:]]+")
+import(sda, care, PoiClaClu, yaml, Hmisc, mixOmics, PartialCox, epibasix, survival)

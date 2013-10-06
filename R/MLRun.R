@@ -29,8 +29,13 @@ MLRun = function(Internal,mySettings){
       PredClassLabelTable = PredTable
     }else
       stop("Unsupported feature selection type: ",MachineLearningInfo$FeatSelType)
+    
     for (iii in 1:cvfolds$R){ # repeats
+      cat("\n")
+      cat("*")
+      cat("\n")
       for(jjj in 1:cvfolds$K){ # folds
+        cat("-")
         #print(jjj)
         ## load data from file
         load(Internal$PrepareDataInfo$cvfoldfilenames[iii,jjj])

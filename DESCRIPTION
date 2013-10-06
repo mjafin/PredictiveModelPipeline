@@ -1,9 +1,15 @@
 Package: PredictiveModelPipeline
 Type: Package
-Title: What the package does (short line)
+Title: Feature selection and evaluation for predictive high dimensional models
 Version: 1.0
 Date: 2013-09-30
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Author: Miika Ahdesmaki
+Maintainer: Miika Ahdesmaki <miika.ahdesmaki@live.fi>
+Description: This package allows to train high dimensional predictive and prognostic models. The following steps are implemented
+1. Categorical (binary or multi class) classification, continuous regression and time-to-event analysis with censoring are supported. Each have their own performance evaluation measures.
+2. Cross validation can be used to estimate generalisation performance; the expected performance should a model be trained on the full training data and applied to an external data set.
+3. Multi sample pre-processing, filtering and feature selection are incorporated within cross validation and no information leakage is allowed.
+4. Feature selection is performed via a wrapper approach (backwards elimination, forward selection) or an internal method (algorithm dependent).
+5. The package uses a .yaml file for specifying the inference settings and a simple reference object style interface for the user.
+License: GPL-3
+Depends: sda, care, PoiClaClu, yaml, Hmisc, mixOmics, PartialCox, epibasix, survival

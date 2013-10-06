@@ -44,7 +44,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
     # CHANGE drawing of folds into stratified:
     set.seed(sett$crossValidation$randomSeed)
     cvfolds = cvFolds(n=N, K = CVFolds, R = CVRepeats)
-    print(cvfolds)
+    #print(cvfolds)
     PrepareDataInfo$cvfoldfilenames = data.frame(matrix(NA, nrow = CVRepeats, ncol = CVFolds))
     PrepareDataInfo$cvInfo = cvfolds # store for later use
     

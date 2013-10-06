@@ -44,6 +44,9 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         if(!length(grep("^[y,Y]",yesno))) # grep returns integer(0) if it doesn't match
           stop("Stopping.")
       }
+      if (!is.matrix(Xtrain)){
+        stop("Xtrain must be a matrix!")
+      }
       Internal$SampleInfo <<- list(VarNames=colnames(Xtrain),
                                    SampleNames=rownames(Xtrain),
                                    N=dim(Xtrain)[1],
@@ -61,8 +64,8 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         if(!is.vector(ytrain) && !is.matrix(ytrain))
           stop("In regression analysis, ytrain must be a vector or a matrix.")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "timetoevent"){
-        if (!is.matrix(ytrain))
-          stop("In time to event analysis, ytrain must be a matrix with follow up times in the first column and event indicator in the second column.")
+        if (!is.Surv(ytrain))
+          stop("In time to event analysis, ytrain must be a Surv object.")
       }else stop("Incorrect inference type selected.")
       
       Internal$SampleInfo$EndPointTrain <<- ytrain
@@ -129,7 +132,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         if(length(levels(Internal$SampleInfo$EndPointTrain))>2)
           Measures=c("Accuracy")
         else
-          Measures= c("Accuracy","AUC","Sensitivity","Specificity")
+          Measures= c("Accuracy","Sensitivity","Specificity","AUC")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "regression"){
         Measures=c("Concordance")
       }else if (tolower(mySettings$preProcessing$inferenceType) == "timetoevent"){
@@ -159,6 +162,10 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
                log="x") # errbar from Hmisc
         title("Cross validation performance")
         Internal$PerformanceMeasures[[measure]]<<-stats
+        imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"))
+        pdf(paste(imageFileName,".pdf"))
+        postscript(paste(imageFileName,".ps"))
+        sprintf("Stored %s figure as %s.pdf and .ps",measure,imageFileName)
       }
       invisible(1)
     },
