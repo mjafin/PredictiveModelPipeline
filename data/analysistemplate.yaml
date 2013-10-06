@@ -28,8 +28,8 @@ preProcessing:
 
 inference:
   filtering:
-    filterType: Var
-    fractionToRemove: 0.5
+    - filterType: Var
+      fractionToRemove: 0.5
   featureSelection:
     featureSelType: BackwardsElimination # [Internal, BackwardsElimination]
     fractionToRemove: 0.5

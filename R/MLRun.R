@@ -11,12 +11,18 @@ MLRun = function(Internal,mySettings){
     MachineLearningInfo$BESteps=BESteps
   }
   else BESteps = NULL
-  
-  fulldatamodel = TrainModels(Xtrain.norm,ytrain,mySettings,BESteps=BESteps)
+  # filtering step for the full data
+  Xtrain.norm.filt = filterData(Xtrain=Xtrain.norm,ytrain=ytrain,filterSettings=mySettings$inference$filtering)
+  # training step for the full data
+  fulldatamodel = TrainModels(Xtrain.norm.filt,ytrain,mySettings,BESteps=BESteps)
   MachineLearningInfo$FullData$Model=fulldatamodel$model
-  MachineLearningInfo$FullData$FeatureRanks=fulldatamodel$featureRanks
-  if (!is.null(MachineLearningInfo$FullData$FeatureRanks))
-    names(MachineLearningInfo$FullData$FeatureRanks)=Internal$SampleInfo$VarNames
+  # assign rank P to all variables first:
+  MachineLearningInfo$FullData$FeatureRanks = rep(P,P)
+  names(MachineLearningInfo$FullData$FeatureRanks) = colnames(Xtrain.norm)
+  # use feature ranks from training to update the actual ranks
+  MachineLearningInfo$FullData$FeatureRanks[colnames(Xtrain.norm.filt)]=fulldatamodel$featureRanks
+  #if (!is.null(MachineLearningInfo$FullData$FeatureRanks))
+  #  names(MachineLearningInfo$FullData$FeatureRanks)=Internal$SampleInfo$VarNames
   rm(fulldatamodel)
   # do CV rounds, if enabled
   if(mySettings$preProcessing$crossValidation$CVEnable){
@@ -164,4 +170,22 @@ CalcBESteps=function(P,variablesMin,fractionToRemove){
     varnumtemp=varnumtemp*(1-fractionToRemove)
   }
   return(unique(BESteps))
+}
+
+filterData=function(Xtrain,ytrain,filterSettings){
+  # filter data based on settings
+  N=dim(Xtrain)[1]
+  P=dim(Xtrain)[2]
+  for (counter in 1:length(filterSettings)){
+    if(tolower(filterSettings[[counter]]$filterType) == "var"){
+      NumRem = min(P-1,trunc(filterSettings[[counter]]$fractionToRemove*P)) # at most P-1
+      NumKeep = P-NumRem
+      vars = apply(Xtrain,2,var)
+      # remove lowest variance features but keep order of columns
+      Xtrain = Xtrain[,sort(order(vars,decreasing=TRUE)[1:NumKeep]),drop=FALSE]
+    }else{
+      stop(paste("Unsupported filter: ",filterSettings$filterType))
+    }
+  }
+  return(Xtrain)
 }
