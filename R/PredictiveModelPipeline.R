@@ -155,6 +155,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       # plot
       for (measure in Measures){
         stats = fetchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
+        pdf(paste(imageFileName,".pdf", sep = ""))
         errbar(xAxis, y=stats$average, yminus=stats$lowerInt, yplus=stats$upperInt,
                ylab=measure,
                xlab=xlab,
@@ -163,8 +164,9 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
         title("Cross validation performance")
         Internal$PerformanceMeasures[[measure]]<<-stats
         imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"), sep = "_")
-        pdf(paste(imageFileName,".pdf", sep = ""))
-        postscript(paste(imageFileName,".ps", sep = ""))
+        
+        #postscript(paste(imageFileName,".ps", sep = ""))
+        dev.off()
         sprintf("Stored %s figure as %s.pdf and .ps",measure,imageFileName)
       }
       invisible(1)
