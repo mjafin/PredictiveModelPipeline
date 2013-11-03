@@ -162,9 +162,9 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
                log="x") # errbar from Hmisc
         title("Cross validation performance")
         Internal$PerformanceMeasures[[measure]]<<-stats
-        imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"))
-        pdf(paste(imageFileName,".pdf"))
-        postscript(paste(imageFileName,".ps"))
+        imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"), sep = "_")
+        pdf(paste(imageFileName,".pdf", sep = ""))
+        postscript(paste(imageFileName,".ps", sep = ""))
         sprintf("Stored %s figure as %s.pdf and .ps",measure,imageFileName)
       }
       invisible(1)
