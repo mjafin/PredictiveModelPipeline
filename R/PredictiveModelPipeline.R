@@ -155,6 +155,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       # plot
       for (measure in Measures){
         stats = fetchMeasures(measure,Internal$MachineLearningInfo$CV,Internal$SampleInfo$EndPointTrain)
+        imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"), sep = "_")
         pdf(paste(imageFileName,".pdf", sep = ""))
         errbar(xAxis, y=stats$average, yminus=stats$lowerInt, yplus=stats$upperInt,
                ylab=measure,
@@ -163,7 +164,7 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
                log="x") # errbar from Hmisc
         title("Cross validation performance")
         Internal$PerformanceMeasures[[measure]]<<-stats
-        imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"), sep = "_")
+#        imageFileName=paste(mySettings$projectname,mySettings$inference$machineLearning$algorithm,measure,format(Sys.time(), "%Y%m%d%H%M"), sep = "_")
         
         #postscript(paste(imageFileName,".ps", sep = ""))
         dev.off()

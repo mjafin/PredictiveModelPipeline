@@ -13,6 +13,8 @@ quantilenorm <- function(x, method="median", quantprob=0.5, refquant = NA) {
 	xsort = matrix(0,nrow=nrow(x),ncol=ncol(x))
 	xi = matrix(0,nrow=nrow(x),ncol=ncol(x))
 	xout = matrix(0,nrow=nrow(x),ncol=ncol(x))
+	colnames(xout) = colnames(x)
+	rownames(xout) = rownames(x)
 	# sort x
 	for(ii in 1:nrow(x)){
 		output=sort(x[ii,], index.return = TRUE)

@@ -26,7 +26,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
   PrepareDataInfo$PreProcModel = preProcout$Model # data.frame with as many entries as there are steps
   rm(preProcout)
   PrepareDataInfo$fulltraindatafilename = file.path(mySettings$directory$intermediate,
-                                                    sprintf("%s_FullData_%s.Rdata", mySettings$projectname,timeString))
+  sprintf("%s_FullData_%s.Rdata", mySettings$projectname,timeString))
   save(Xtrain.norm, ytrain, file = PrepareDataInfo$fulltraindatafilename)
   # CV enabled?
   if(sett$crossValidation$CVEnable){
