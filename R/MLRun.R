@@ -14,7 +14,6 @@ MLRun = function(Internal,mySettings){
   # filtering step for the full data
   Xtrain.norm.filt = filterData(Xtrain=Xtrain.norm,ytrain=ytrain,filterSettings=mySettings$inference$filtering)
   # training step for the full data
-  #browser()
   fulldatamodel = TrainModels(Xtrain.norm.filt,ytrain,mySettings,BESteps=BESteps)
   MachineLearningInfo$FullData$Model=fulldatamodel$model
   # assign rank P to all variables first:
@@ -65,11 +64,15 @@ MLRun = function(Internal,mySettings){
 }
 
 TrainModels=function(CVX.train,CVy.train,mySettings,Xtest=NULL,BESteps=NULL){
+  ## Train models either in backwards elimination or using internal feature selection. When training the final model with reduced CVX.train, provide a single numerical value in BESteps, e.g. the number of features to use. This enables returning the predictive model.
   #fields: model, continuousPreds, labelPreds, featureRanks
   FeatSelType = tolower(mySettings$inference$featureSelection$featureSelType)
   PredModFunc = get( paste("PredictiveModel",toupper(mySettings$inference$machineLearning$algorithm),sep="") )
   if(tolower(FeatSelType)=="internal"){
-    out=PredModFunc(CVX.train,CVy.train,mySettings,Xtest=Xtest,internFeatSel=T)
+    internFeatSel=T
+    if (!is.null(BESteps) && length(BESteps)==1) # this condition is true when finalising models and no feature selection is performed
+      internFeatSel=F 
+    out=PredModFunc(CVX.train,CVy.train,mySettings,Xtest=Xtest,internFeatSel=internFeatSel)
   }else if(tolower(FeatSelType)=="backwardselimination"){
     out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, featureRanks=NULL)
     N=dim(Xtest)[1]
@@ -103,15 +106,41 @@ TrainModels=function(CVX.train,CVy.train,mySettings,Xtest=NULL,BESteps=NULL){
     }
     out$featureRanks = featureRanks
     # do not return a model as the feature elimination rounds produce multiple
+		# unless only one round is run (likely model finalisation)
+    if (length(BESteps)==1) out$model = tempout$model
+    #END else if(tolower(FeatSelType)=="backwardselimination")
   }else
     stop("Unsupported feature selection type: ",FeatSelType)
   return(out)
 }
 
+# Predict test samples:
+PredictTestSamples=function(Xtest, Internal, mySettings){
+  #fields: model, continuousPreds, labelPreds, featureRanks 
+  PredModFunc = get( paste("PredictiveModel",toupper(mySettings$inference$machineLearning$algorithm),sep="") )
+	# normalise test data
+  # Internal$PrepareDataInfo$PreProcModel
+	Xtest.norm = preProc(settings=mySettings$preProcessing,Xtrain=NULL,Xtest=Xtest,Model=Internal$PrepareDataInfo$PreProcModel)$xouttest 
+	# predict test data using only the features in the final mode 
+	out=PredModFunc(CVX.train=NULL,CVy.train=NULL,mySettings,Xtest=Xtest.norm[,Internal$FinalModelInfo$finalFeat],model=Internal$FinalModelInfo$model)
+  out$Xtest.norm = Xtest.norm
+  return(out)
+}
+
 # machine learning implementations
-PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeatSel=F){
+PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeatSel=F,model=NULL){
   ##SDA
   out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, featureRanks=NULL)
+  ## If 'model' is provided, merely predict Xtest:
+  if(!is.null(model)){
+		out$model = model
+    sdapreds = predict(model, Xtest, verbose=FALSE)
+    out$labelPreds = sdapreds$class
+    if(length(unique(CVy.train))<3) # if two-class problem
+      out$continuousPreds=sdapreds$posterior[,2,drop=F]
+		return(out)
+  }
+  # otherwise do all sorts of training
   P=dim(CVX.train)[2]
   if(internFeatSel){
     sdaranking = sda.ranking(CVX.train, CVy.train, verbose=FALSE)
@@ -145,7 +174,7 @@ PredictiveModelSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeat
   return(out)
 }
 
-PredictiveModelPOICLACLU=function(CVX.train,CVy.train,mySettings,Xtest=NULL){
+PredictiveModelPOICLACLU=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeatSel=F,model=NULL){
   out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, featureRanks=NULL)
   ##PoiClaClu
   temp = Classify(x=CVX.train,y=CVy.train,
@@ -154,12 +183,12 @@ PredictiveModelPOICLACLU=function(CVX.train,CVy.train,mySettings,Xtest=NULL){
   return(out)
 }
 
-PredictiveModelSPLSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL){
+PredictiveModelSPLSDA=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeatSel=F,model=NULL){
   out=list(model=NULL, continuousPreds=NULL, labelPreds=NULL, featureRanks=NULL)
   return(out)
 }
 
-PredictiveModelPARTIALCOX=function(){
+PredictiveModelPARTIALCOX=function(CVX.train,CVy.train,mySettings,Xtest=NULL,internFeatSel=F,model=NULL){
   
 }
 

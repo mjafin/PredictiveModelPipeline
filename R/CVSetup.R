@@ -85,7 +85,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
     
 preProc=function(settings,Xtrain=NULL,Xtest=NULL,Model=NULL){
   output=list()
-  # if normalisation etc. steps disabled:
+  # if normalisation etc. steps disabled: 
   if(is.null(settings$preProcSteps)||length(settings$preProcSteps)<1){
     output$xouttrain=Xtrain
     output$xouttest=Xtest
@@ -124,14 +124,16 @@ quantileFunc=function(stepSettings,Xtrain=NULL,Xtest=NULL,Model=NULL){
     if(!is.null(Xtrain)){
       temp=quantilenorm(Xtrain,method="quant", refquant=quantiles)
       output$xouttrain=temp$xout
+      rm(temp)
     }
   }else{
     temp=quantilenorm(Xtrain,method="quant", quantprob=stepSettings$value)
     quantiles=temp$quantiles
     output$xouttrain=temp$xout
+    rm(temp)
   }
   if(!is.null(Xtest)){
-    temp2=quantilenorm(Xtest,method="quant", refquant=temp$quantiles)
+    temp2=quantilenorm(Xtest,method="quant", refquant=quantiles)
     output$xouttest=temp2$xout
   }
   output$Model$quantiles = quantiles

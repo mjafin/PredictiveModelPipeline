@@ -1,7 +1,4 @@
-## a simple editor for matrix objects.  Method  $edit() changes some
-## range of values; method $undo() undoes the last edit.
-# 
-# $usingMethods()?
+## Reference class based signature discovery and prediction
 
 ##temporary sourcing:
 source("CVSetup.R")
@@ -112,14 +109,30 @@ myMachineLearningClass <- setRefClass("PredictiveModel",
       if(!Internal$AnalysisSteps$MLDone){
         stop("Please run the MachineLearning() function for the object first, even if CV is disabled.")
       }
-      
+			# load data, preprocess and train
+			load(Internal$PrepareDataInfo$fulltraindatafilename) # load full training data: Xtrain.norm, ytrain
+			numFeat = mySettings$finalisation$NumFeatToUse
+			cat("Number of features in the finalised model:", numFeat, "\n")
+			finalFeat = names(sort(Internal$MachineLearningInfo$FullData$FeatureRanks)[1:numFeat])
+      # Provide BESteps = numFeat to TrainModels in case BE was used as this triggers returning a model. Doesn't affect other (internal) feature selection methods
+      Internal$FinalModelInfo <<- TrainModels(Xtrain.norm[,finalFeat],ytrain,mySettings, BESteps = numFeat)
+      # store feature names
+      Internal$FinalModelInfo$finalFeat<<-finalFeat
       Internal$AnalysisSteps$ModelFinalised<<-T
       cat("FinalModelBuild() finished successfully. Next run member function Predict() on external samples.")
       invisible(1)
     },
-    Predict = function() {
+    Predict = function(Xtest) {
       'Predict new samples given a model trained in FinalModelBuild.
        '
+			if(!Internal$AnalysisSteps$ModelFinalised){
+        stop("Please run the FinalModelBuild() function for the object first before predicting new samples.")
+      }
+      if (!is.matrix(Xtest))
+        stop("The input data must be a matrix!")
+			#Normalise data and predict given model
+      out=PredictTestSamples(Xtest, Internal, mySettings)
+      return(out)
       invisible(1)
     },
     Plot = function() {
