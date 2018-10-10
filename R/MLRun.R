@@ -6,13 +6,15 @@ MLRun = function(Internal,mySettings){
   MachineLearningInfo$FeatSelType = tolower(mySettings$inference$featureSelection$featureSelType)
   P=dim(Xtrain.norm)[2]
   N=dim(Xtrain.norm)[1]
+
+  Xtrain.norm.filt = filterData(Xtrain=Xtrain.norm,ytrain=ytrain,filterSettings=mySettings$inference$filtering)
+  Pfilt=dim(Xtrain.norm.filt)[2] # number of features post filtering
   if(tolower(MachineLearningInfo$FeatSelType)=="backwardselimination"){
-    BESteps = CalcBESteps(P,mySettings$inference$featureSelection$variablesMin,mySettings$inference$featureSelection$fractionToRemove)
+    BESteps = CalcBESteps(Pfilt,mySettings$inference$featureSelection$variablesMin,mySettings$inference$featureSelection$fractionToRemove)
     MachineLearningInfo$BESteps=BESteps
   }
   else BESteps = NULL
   # filtering step for the full data
-  Xtrain.norm.filt = filterData(Xtrain=Xtrain.norm,ytrain=ytrain,filterSettings=mySettings$inference$filtering)
   # training step for the full data
   fulldatamodel = TrainModels(Xtrain.norm.filt,ytrain,mySettings,BESteps=BESteps)
   MachineLearningInfo$FullData$Model=fulldatamodel$model
@@ -46,7 +48,9 @@ MLRun = function(Internal,mySettings){
         ## load data from file
         load(Internal$PrepareDataInfo$cvfoldfilenames[iii,jjj])
         # train, predict, collect results
-        CVResults = TrainModels(CVX.train.norm,CVy.train,mySettings,Xtest=CVX.test.norm,BESteps=BESteps)
+				browser()
+				CVX.train.norm.filt = filterData(Xtrain=CVX.train.norm,ytrain=CVy.train,filterSettings=mySettings$inference$filtering)
+        CVResults = TrainModels(CVX.train.norm.filt,CVy.train,mySettings,Xtest=CVX.test.norm[,colnames(CVX.train.norm.filt)],BESteps=BESteps)
         if(tolower(MachineLearningInfo$FeatSelType)=="internal"){
           PredTable[testInds,iii] = CVResults$continuousPreds # vector-matrix
           PredClassLabelTable[testInds,iii] = CVResults$labelPreds # vector-matrix
@@ -66,6 +70,7 @@ MLRun = function(Internal,mySettings){
 TrainModels=function(CVX.train,CVy.train,mySettings,Xtest=NULL,BESteps=NULL){
   ## Train models either in backwards elimination or using internal feature selection. When training the final model with reduced CVX.train, provide a single numerical value in BESteps, e.g. the number of features to use. This enables returning the predictive model.
   #fields: model, continuousPreds, labelPreds, featureRanks
+  
   FeatSelType = tolower(mySettings$inference$featureSelection$featureSelType)
   PredModFunc = get( paste("PredictiveModel",toupper(mySettings$inference$machineLearning$algorithm),sep="") )
   if(tolower(FeatSelType)=="internal"){
