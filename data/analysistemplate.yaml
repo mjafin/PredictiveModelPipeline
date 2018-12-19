@@ -13,16 +13,16 @@ libraries: [] # any additional required libraries can be added here to be loaded
 preProcessing:
   crossValidation:
     CVEnable: TRUE # boolean TRUE or FALSE
-    LOOCV: TRUE # If LOOCV is true, CVFolds and CVRepeats are ignored
-    CVFolds: 10
+    LOOCV: FALSE # If LOOCV is true, CVFolds and CVRepeats are ignored (LOOCV currently breaks the pipeline)
+    CVFolds: 5
     CVRepeats: 10
     randomSeed: 1234
   inferenceType: Classification # [Classification, Regression, Timetoevent]
   preProcSteps: # arbitrary number of preprocessing steps can be placed here
     - method: Quantile
       value: 0.75 # numeric quantile (0.5 corresponds to median)
-    - method: log
-      value: 2 # log 2 transform
+    #- method: log
+    #  value: 2 # log 2 transform
     #- method: summarisation #  supported: [sum, median]
     #  value: sum
 
