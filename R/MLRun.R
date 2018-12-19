@@ -1,7 +1,3 @@
-require(parallel)
-require(doMC)
-require(foreach)
-registerDoMC(max(1,detectCores()-1)) # leave one core unutilised
 # internal functions
 MLRun = function(Internal,mySettings){
   MachineLearningInfo=list() # this is the output

@@ -10,7 +10,11 @@ require("Hmisc")
 if(!require("yaml")){
   stop("Package yaml is a requirement to run this pipeline. Please install yaml.")
 }
-
+require(parallel)
+require(doMC)
+require(foreach)
+registerDoMC(max(1,detectCores()-1)) # leave one core unutilised
+#
 # function that returns an object of class myMachineLearningClass
 PredictiveModel = function(inputYamlFile){
   cat ("~~~~~ PredictiveModel: constructor ~~~~~ \n")

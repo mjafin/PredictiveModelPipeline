@@ -50,7 +50,7 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
     
     # loop through repeats and folds
     for (iii in 1:cvfolds$R){ # repeats
-      for(jjj in 1:cvfolds$K){ # folds
+      parcvfoldfilenames = foreach(jjj = 1:cvfolds$K, .combine=c) %dopar% { # folds
         trainInds = cvfolds$subsets[cvfolds$which!=jjj,iii]
         testInds = cvfolds$subsets[cvfolds$which==jjj,iii]
         CVX.train = Xtrain[trainInds,,drop=F]
@@ -68,16 +68,18 @@ CVSetup = function(Internal,mySettings,Xtrain,ytrain){
         normTemp = preProc(CVX.train,settings=sett,Xtest=CVX.test)
         CVX.train.norm = normTemp$xouttrain
         CVX.test.norm = normTemp$xouttest
-        PrepareDataInfo$cvfoldfilenames[iii,jjj] = file.path(mySettings$directory$intermediate,
-                                                             sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString))
+        #PrepareDataInfo$cvfoldfilenames[iii,jjj] = file.path(mySettings$directory$intermediate, sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString))
+        cvfoldfilename = file.path(mySettings$directory$intermediate, sprintf("%s_CVRepeat%dFold%d_%s.Rdata",mySettings$projectname,iii,jjj,timeString))
         save(CVX.train.norm, 
                   CVX.test.norm, 
                   CVy.train, 
                   CVy.test, 
                   trainInds, 
                   testInds, 
-             file = PrepareDataInfo$cvfoldfilenames[iii,jjj])
+             file = cvfoldfilename)
+        cvfoldfilename # return value for parallel loop 
       }
+      PrepareDataInfo$cvfoldfilenames[iii,] = parcvfoldfilenames
     } 
   }
   return(PrepareDataInfo)
