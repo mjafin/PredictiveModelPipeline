@@ -1,3 +1,7 @@
+require(parallel)
+require(doMC)
+require(foreach)
+registerDoMC(max(1,detectCores()-1)) # leave one core unutilised
 # internal functions
 MLRun = function(Internal,mySettings){
   MachineLearningInfo=list() # this is the output
@@ -42,7 +46,7 @@ MLRun = function(Internal,mySettings){
       cat("\n")
       cat("*")
       cat("\n")
-      for(jjj in 1:cvfolds$K){ # folds
+      myFoldsData = foreach(jjj=1:cvfolds$K) %dopar% { # folds
         cat("-")
         #print(jjj)
         ## load data from file
@@ -51,14 +55,27 @@ MLRun = function(Internal,mySettings){
 				CVX.train.norm.filt = filterData(Xtrain=CVX.train.norm,ytrain=CVy.train,filterSettings=mySettings$inference$filtering)
         CVResults = TrainModels(CVX.train.norm.filt,CVy.train,mySettings,Xtest=CVX.test.norm[,colnames(CVX.train.norm.filt)],BESteps=BESteps)
         if(tolower(MachineLearningInfo$FeatSelType)=="internal"){
-          PredTable[testInds,iii] = CVResults$continuousPreds # vector-matrix
-          PredClassLabelTable[testInds,iii] = CVResults$labelPreds # vector-matrix
+          #PredTable[testInds,iii] = CVResults$continuousPreds # vector-matrix
+          #PredClassLabelTable[testInds,iii] = CVResults$labelPreds # vector-matrix
         }else if(tolower(MachineLearningInfo$FeatSelType)=="backwardselimination"){
-          PredTable[testInds,iii,] = CVResults$continuousPreds # matrix
-          PredClassLabelTable[testInds,iii,] = CVResults$labelPreds # matrix
+          #PredTable[testInds,iii,] = CVResults$continuousPreds # matrix
+          #PredClassLabelTable[testInds,iii,] = CVResults$labelPreds # matrix
+
         }else 
           stop("Unsupported feature selection type: ",MachineLearningInfo$FeatSelType)
+        list(testInds=testInds, continuousPreds=CVResults$continuousPreds, labelPreds=CVResults$labelPreds) # return value from parallel for
       } # end folds
+			# collect results of parallel execution into a table
+      for (myFoldData in myFoldsData){ #
+				testInds=myFoldData$testInds
+				if(tolower(MachineLearningInfo$FeatSelType)=="internal"){
+          PredTable[testInds,iii] = myFoldData$continuousPreds # vector-matrix
+          PredClassLabelTable[testInds,iii] = myFoldData$labelPreds # vector-matrix
+        }else if(tolower(MachineLearningInfo$FeatSelType)=="backwardselimination"){
+          PredTable[testInds,iii,] = myFoldData$continuousPreds # matrix
+          PredClassLabelTable[testInds,iii,] = myFoldData$labelPreds # matrix
+				}
+      }
     } # end repeats
     MachineLearningInfo$CV$PredTable=PredTable
     MachineLearningInfo$CV$PredClassLabelTable=PredClassLabelTable
