@@ -20,7 +20,7 @@ preProcessing:
   inferenceType: Classification # [Classification, Regression, Timetoevent]
   preProcSteps: # arbitrary number of preprocessing steps can be placed here
     - method: Quantile
-      value: 0.75 # numeric quantile (0.5 corresponds to median)
+      value: 0.75 # numeric quantile (0.5 corresponds to median), "mean" or "median"
     #- method: log
     #  value: 2 # log 2 transform
     #- method: summarisation #  supported: [sum, median]

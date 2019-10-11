@@ -124,18 +124,27 @@ quantileFunc=function(stepSettings,Xtrain=NULL,Xtest=NULL,Model=NULL){
   if(!is.null(Model)){
     quantiles=Model$quantiles
     if(!is.null(Xtrain)){
-      temp=quantilenorm(Xtrain,method="quant", refquant=quantiles)
+      temp=quantilenorm(Xtrain, refquant=quantiles) 
       output$xouttrain=temp$xout
       rm(temp)
     }
   }else{
-    temp=quantilenorm(Xtrain,method="quant", quantprob=stepSettings$value)
+    if(is.character(stepSettings$value)){
+        my_quant_method = stepSettings$value
+        my_quant_prob = NA 
+    }else
+    {
+        my_quant_method = "quant"
+        my_quant_prob = stepSettings$value
+    }
+
+    temp=quantilenorm(Xtrain, method=my_quant_method, quantprob=my_quant_prob)
     quantiles=temp$quantiles
     output$xouttrain=temp$xout
     rm(temp)
   }
   if(!is.null(Xtest)){
-    temp2=quantilenorm(Xtest,method="quant", refquant=quantiles)
+    temp2=quantilenorm(Xtest, refquant=quantiles)
     output$xouttest=temp2$xout
   }
   output$Model$quantiles = quantiles
