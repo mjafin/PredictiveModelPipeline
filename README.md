@@ -1,6 +1,20 @@
 # PredictiveModelPipeline
 High dimensional predictive modelling in R
 
+Conda installation of dependencies
+```
+# get miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh
+bash Miniconda2-latest-Linux-x86_64.sh  -b
+cd miniconda2/bin
+
+# add bioconda
+./conda config --add channels defaults && ./conda config --add channels bioconda && ./conda config --add channels conda-forge
+
+# install R and dependencies
+./conda create -n predmod_r r-base r-yaml r-hmisc r-sda r-mixomics r-epibasix r-survival r-domc r-foreach r-cvtools -y
+```
+
 Basic usage
 ```
 require(sda)
