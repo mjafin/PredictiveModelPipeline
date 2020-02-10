@@ -32,6 +32,7 @@ AccuracyFunc=function(preds,EndPointTrain){
   out=list(average=NA,CI=c(NA,NA))
   # form a table but flip the columns and rows, so that sensitivity for the higher level get estimated
   if (length(unique(EndPointTrain))<=2){
+  if(length(unique(preds))<2) preds = factor(preds, levels=levels(EndPointTrain))
   temp=sensSpec(table(preds,EndPointTrain)[2:1,2:1], alpha=0.05, CL=TRUE, digits=3)
   out$average = temp$PA
   out$CI = c(temp$PA.CIL,temp$PA.CIU)
@@ -61,6 +62,7 @@ SensitivityFunc=function(preds,EndPointTrain){
    '
   out=list(average=NA,CI=c(NA,NA))
   # form a table but flip the columns and rows, so that sensitivity for the higher level get estimated
+  if(length(unique(preds))<2) preds = factor(preds, levels=levels(EndPointTrain))
   temp=sensSpec(table(preds,EndPointTrain)[2:1,2:1], alpha=0.05, CL=TRUE, digits=3)
   out$average = temp$sens
   out$CI = c(temp$sens.CIL,temp$sens.CIU)
@@ -71,6 +73,7 @@ SpecificityFunc=function(preds,EndPointTrain){
    '
   out=list(average=NA,CI=c(NA,NA))
   # form a table but flip the columns and rows, so that sensitivity for the higher level get estimated
+  if(length(unique(preds))<2) preds = factor(preds, levels=levels(EndPointTrain))
   temp=sensSpec(table(preds,EndPointTrain)[2:1,2:1], alpha=0.05, CL=TRUE, digits=3)
   out$average = temp$spec
   out$CI = c(temp$spec.CIL,temp$spec.CIU)
